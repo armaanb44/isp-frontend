@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "soundFile": "C:\\Users\\ARMAAN\\Desktop\\backup_before_avatar\\kcl_isp_backend\\audios\\hardcoded\\negative1.wav",
+    "duration": 1.61
+  },
+  "mouthCues": [
+    { "start": 0.00, "end": 0.01, "value": "X" },
+    { "start": 0.01, "end": 0.05, "value": "B" },
+    { "start": 0.05, "end": 0.09, "value": "C" },
+    { "start": 0.09, "end": 0.16, "value": "D" },
+    { "start": 0.16, "end": 0.37, "value": "C" },
+    { "start": 0.37, "end": 0.51, "value": "B" },
+    { "start": 0.51, "end": 0.87, "value": "X" },
+    { "start": 0.87, "end": 0.96, "value": "B" },
+    { "start": 0.96, "end": 1.45, "value": "C" },
+    { "start": 1.45, "end": 1.61, "value": "X" }
+  ]
+}

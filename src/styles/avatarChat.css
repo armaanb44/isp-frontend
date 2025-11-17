@@ -1,0 +1,54 @@
+/* src/styles/avatarChat.css */
+
+/* Layout container */
+.avatar-chat-layout {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #000;
+  background:  #6e5d5c;
+}
+
+/* Chat section */
+.chat-pane {
+  flex: 1;
+  background: #6e5d5c;
+  overflow-y: auto;
+  z-index: 10;
+  border-right: 2px solid #222;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Avatar section */
+.avatar-pane {
+  flex: 1;
+  position: relative;
+  background:  #6e5d5c;
+}
+
+/* Make the 3D canvas fill its half */
+.avatar-pane canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Responsive behavior (stack vertically on mobile) */
+@media (max-width: 900px) {
+  .avatar-chat-layout {
+    flex-direction: column;
+  }
+
+  .chat-pane {
+    border-right: none;
+    border-bottom: 2px solid #222;
+    height: 50vh;
+  }
+
+  .avatar-pane {
+    height: 50vh;
+  }
+}
