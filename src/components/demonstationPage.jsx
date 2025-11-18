@@ -10,8 +10,8 @@ export default function DemoVideoPage() {
   // Choose correct video for condition
   const videoId =
     condition === "avatar"
-      ? "AVATAR_VIDEO_ID"   // replace with your YouTube ID
-      : "CHAT_VIDEO_ID";    // replace with your YouTube ID
+      ? "igLvv87zNrU"   // avatar-chat condition video ID
+      : "XWP5KBkevoQ";    // chat only condition video ID
 
   return (
     <div
