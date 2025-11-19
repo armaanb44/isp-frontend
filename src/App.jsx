@@ -18,6 +18,7 @@ import SystemUsabilityScale from "./components/systemUsabilityScale";
 import Withdrawn from "./components/withdrawn";
 import Debrief from "./components/debriefForm";
 import Layout from "./components/layout";
+import InformationSheet from "./components/informationSheet";
 
 async function handleTLXSubmit(scores) {
   console.log("TLX results:", scores);
@@ -50,6 +51,9 @@ export default function App() {
       { path: "demo", element: <DemoLanding /> },
       { path: "demo-video", element: <DemoVideoPage /> },
       { path: "withdrawn", element: <Withdrawn /> },
+
+      //Information sheet
+       { path: "information", element: <InformationSheet /> },
 
       // Catch-all
       { path: "*", element: <Navigate to="/" replace /> },
