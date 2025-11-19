@@ -46,14 +46,15 @@ export default function App() {
       { path: "godspeed", element: <GodspeedScale /> },
       { path: "susscale", element: <SystemUsabilityScale /> },
       { path: "debrief", element: <Debrief /> },
+        //Information sheet
+       { path: "information", element: <InformationSheet /> },
 
       // DEMO routes
       { path: "demo", element: <DemoLanding /> },
       { path: "demo-video", element: <DemoVideoPage /> },
       { path: "withdrawn", element: <Withdrawn /> },
 
-      //Information sheet
-       { path: "information", element: <InformationSheet /> },
+    
 
       // Catch-all
       { path: "*", element: <Navigate to="/" replace /> },
