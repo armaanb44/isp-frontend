@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ITEMS = [
   { key: 1, text: "I think that I would like to use this system frequently." },
@@ -22,9 +23,13 @@ export default function SystemUsabilityScale({ onSubmit }) {
     setResponses((prev) => ({ ...prev, [key]: Number(val) }));
   };
 
+  const nav = useNavigate();
   const handleSubmit = () => {
+    nav("/debrief"),
     onSubmit(responses);
   };
+
+  
 
   return (
     <div
