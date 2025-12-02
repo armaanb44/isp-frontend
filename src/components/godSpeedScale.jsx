@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { auth } from "../lib/firebase";
+import { logGodspeed } from "../lib/logUtils";
 
 export default function GodspeedScale({ onSubmit }) {
   const [answers, setAnswers] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const nav = useNavigate();
-
-  const handleChange = (key, value) => {
-    setAnswers((prev) => ({ ...prev, [key]: Number(value) }));
-  };
 
   const scales = [
     {
@@ -61,6 +61,61 @@ export default function GodspeedScale({ onSubmit }) {
     },
   ];
 
+  const handleChange = (key, value) => {
+    setAnswers((prev) => ({ ...prev, [key]: Number(value) }));
+  };
+
+  // 🔹 Build the full list of keys once (stable across renders)
+  const allKeys = useMemo(
+    () =>
+      scales.flatMap((scale) =>
+        scale.items.map((_, itemIndex) => `${scale.title}_${itemIndex}`)
+      ),
+    [scales]
+  );
+
+  const allAnswered = allKeys.every((k) => answers[k] !== undefined);
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    if (!allAnswered) {
+      alert("Please answer all items before submitting.");
+      return;
+    }
+
+    const ok = window.confirm(
+      "Are you sure you want to submit your responses?"
+    );
+    if (!ok) return;
+
+    setSubmitting(true);
+
+    // optional: lift state up
+    if (typeof onSubmit === "function") {
+      try {
+        onSubmit(answers);
+      } catch (err) {
+        console.error("onSubmit handler threw:", err);
+      }
+    }
+
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        console.warn("Godspeed: no authenticated user found.");
+      } else {
+        await logGodspeed(uid, answers);
+      }
+
+      // next questionnaire
+      nav("/susscale");
+    } catch (err) {
+      console.error("🔥 Failed to log Godspeed scale:", err);
+      setSubmitting(false); // let them retry
+    }
+  };
+
   return (
     <div
       style={{
@@ -91,7 +146,13 @@ export default function GodspeedScale({ onSubmit }) {
             {scale.title}
           </h3>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "2rem",
+            }}
+          >
             {scale.items.map(([left, right], itemIndex) => {
               const key = `${scale.title}_${itemIndex}`;
 
@@ -114,7 +175,7 @@ export default function GodspeedScale({ onSubmit }) {
                     min="1"
                     max="5"
                     step="1"
-                    value={answers[key] || 3}
+                    value={answers[key] ?? 3}
                     onChange={(e) => handleChange(key, e.target.value)}
                     style={{ width: "100%" }}
                   />
@@ -137,23 +198,22 @@ export default function GodspeedScale({ onSubmit }) {
       ))}
 
       <button
-        onClick={() => {
-            nav("/susscale")
-            onSubmit(answers)}}
+        onClick={handleSubmit}
+        disabled={submitting}
         style={{
           marginTop: "2.5rem",
           width: "100%",
           padding: "1rem",
-          background: "#0066ff",
+          background: submitting ? "#999" : "#0066ff",
           color: "#fff",
           fontWeight: "600",
           borderRadius: "8px",
           border: "none",
-          cursor: "pointer",
+          cursor: submitting ? "not-allowed" : "pointer",
           fontSize: "1rem",
         }}
       >
-        Submit Responses
+        {submitting ? "Submitting..." : "Submit Responses"}
       </button>
     </div>
   );

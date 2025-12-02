@@ -1,6 +1,9 @@
 // src/components/NetworkedMinds.jsx
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { auth } from "../lib/firebase";      // 🔹 get current user
+import { logNms } from "../lib/logUtils";    // 🔹 Firestore logger
 
 const SCALE = [1, 2, 3, 4, 5, 6, 7];
 
@@ -69,15 +72,61 @@ const SECTIONS = [
   },
 ];
 
+// Precompute total number of items for validation
+const TOTAL_ITEMS = SECTIONS.reduce(
+  (sum, sec) => sum + sec.items.length,
+  0
+);
+
 export default function NetworkedMinds() {
   const [responses, setResponses] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const nav = useNavigate();
 
   const handleChange = (index, value) => {
-    setResponses({ ...responses, [index]: value });
+    setResponses((prev) => ({
+      ...prev,
+      [index]: parseInt(value, 10),
+    }));
   };
 
+  // how many answered
+  const answeredCount = Object.keys(responses).length;
+  const isComplete = answeredCount === TOTAL_ITEMS;
+
   let globalIdx = 0;
+
+  async function handleSubmit() {
+    if (submitting) return;
+
+    // 1️⃣ Block submit if any item is missing
+    if (!isComplete) {
+      alert("Please answer all items before submitting.");
+      return;
+    }
+
+    // 2️⃣ Confirm submission
+    const ok = window.confirm(
+      "Are you sure you want to submit your responses?"
+    );
+    if (!ok) return;
+
+    setSubmitting(true);
+
+    try {
+      const uid = auth.currentUser?.uid;
+      if (uid) {
+        await logNms(uid, responses);
+      } else {
+        console.warn("Networked Minds: No authenticated user found.");
+      }
+
+      nav("/godspeed");
+    } catch (err) {
+      console.error("🔥 Failed to submit NMSPI:", err);
+      setSubmitting(false); // allow retry if something blows up
+    }
+  }
 
   return (
     <div
@@ -115,7 +164,7 @@ export default function NetworkedMinds() {
 
           <table style={{ width: "100%", marginTop: "1rem" }}>
             <tbody>
-              {sec.items.map((text, itemIndex) => {
+              {sec.items.map((text) => {
                 const idx = globalIdx++;
                 return (
                   <tr
@@ -132,7 +181,7 @@ export default function NetworkedMinds() {
                             type="radio"
                             name={`q_${idx}`}
                             value={num}
-                            checked={responses[idx] === String(num)}
+                            checked={responses[idx] === num}
                             onChange={(e) =>
                               handleChange(idx, e.target.value)
                             }
@@ -149,27 +198,42 @@ export default function NetworkedMinds() {
         </div>
       ))}
 
-    <button
-  onClick={() => {
-    console.log("NMSPI responses:", responses);
-    nav("/godspeed");
-  }}
-  style={{
-    marginTop: "2.5rem",
-    width: "100%",
-    padding: "1rem",
-    background: "#0066ff",
-    color: "#fff",
-    fontWeight: "600",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "1rem",
-  }}
->
-  Submit Responses
-</button>
+      {/* Optional progress text */}
+      <p
+        style={{
+          marginTop: "1rem",
+          fontSize: "0.9rem",
+          textAlign: "center",
+          opacity: 0.7,
+        }}
+      >
+        Answered {answeredCount} of {TOTAL_ITEMS} items
+      </p>
 
+      <button
+        onClick={handleSubmit}
+        disabled={submitting || !isComplete}
+        style={{
+          marginTop: "1.5rem",
+          width: "100%",
+          padding: "1rem",
+          background:
+            submitting || !isComplete ? "#999" : "#0066ff",
+          color: "#fff",
+          fontWeight: "600",
+          borderRadius: "8px",
+          border: "none",
+          cursor:
+            submitting || !isComplete ? "not-allowed" : "pointer",
+          fontSize: "1rem",
+        }}
+      >
+        {submitting
+          ? "Submitting..."
+          : isComplete
+          ? "Submit Responses"
+          : "Please answer all items"}
+      </button>
     </div>
   );
 }

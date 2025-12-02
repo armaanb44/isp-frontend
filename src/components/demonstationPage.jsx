@@ -1,17 +1,23 @@
+// src/demo/DemoVideoPage.jsx
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function DemoVideoPage() {
   const nav = useNavigate();
   const { state } = useLocation();
 
-  // fallback = chat
-  const condition = state?.condition || "chat";
+  // Try route state first, then sessionStorage, fallback to "chat"
+  const storedCondition =
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("assignedCondition")
+      : null;
 
-  // Choose correct video for condition
+  const condition = state?.condition || storedCondition || "chat";
+
+  // Choose correct video for condition (hidden from participant)
   const videoId =
     condition === "avatar"
-      ? "igLvv87zNrU"   // avatar-chat condition video ID
-      : "XWP5KBkevoQ";    // chat only condition video ID
+      ? "igLvv87zNrU" // avatar + chat demo
+      : "XWP5KBkevoQ"; // chat-only demo
 
   return (
     <div
@@ -28,15 +34,14 @@ export default function DemoVideoPage() {
       }}
     >
       <h2 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
-        {condition === "avatar"
-          ? "Avatar + Chat Condition Demonstration"
-          : "Chat-Only Condition Demonstration"}
+        Experiment Interface Introduction
       </h2>
 
       <p style={{ marginBottom: "1.5rem", lineHeight: 1.55 }}>
-        This short video demonstrates how this condition works.
+        This short video shows the interface you&apos;ll use to work with your AI
+        teammate during the puzzle task.
         <br />
-        <strong>No participant data is collected in this preview.</strong>
+        After watching, you&apos;ll continue directly to the experiment.
       </p>
 
       {/* ---- EMBED VIDEO ---- */}
@@ -54,14 +59,14 @@ export default function DemoVideoPage() {
           width="100%"
           height="100%"
           src={`https://www.youtube.com/embed/${videoId}`}
-          title="Experiment Demonstration"
+          title="Experiment Interface Introduction"
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowFullScreen
         />
       </div>
 
-      {/* ---- NEXT STEPS ---- */}
+      {/* ---- CONTINUE TO TASK ---- */}
       <div
         style={{
           display: "flex",
@@ -76,7 +81,7 @@ export default function DemoVideoPage() {
             nav(condition === "avatar" ? "/avatar-chat" : "/chat")
           }
           style={{
-            background: condition === "avatar" ? "#111" : "#0066ff",
+            background: "#0066ff",
             color: "#fff",
             padding: "0.9rem",
             borderRadius: "8px",
@@ -86,24 +91,7 @@ export default function DemoVideoPage() {
             fontSize: "1rem",
           }}
         >
-          Continue to {condition === "avatar" ? "Avatar + Chat" : "Chat-Only"} Condition
-        </button>
-
-        <button
-          onClick={() => nav("/demo")}
-          style={{
-            background: "#ccc",
-            color: "#000",
-            padding: "0.8rem",
-            borderRadius: "8px",
-            border: "none",
-            fontWeight: "600",
-            cursor: "pointer",
-            fontSize: "0.95rem",
-            marginTop: "0.5rem",
-          }}
-        >
-          ← Back to Demo Menu
+          Continue to puzzle task
         </button>
       </div>
     </div>

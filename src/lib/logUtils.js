@@ -1,6 +1,7 @@
 import { db, ts } from './firebase'
 import { doc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore'
 import { nanoid } from 'nanoid'
+import { log } from 'three'
 
 // ─────────────────────────────────────────────────────────────
 // 1️⃣ Create or ensure participant root document
@@ -50,21 +51,81 @@ export async function logPuzzle(participantId, { id, answer, correct, hintsUsed,
 // ─────────────────────────────────────────────────────────────
 // 4️⃣ Log summary or running totals
 // ─────────────────────────────────────────────────────────────
-export async function logSummary(participantId, { totalCorrect, totalHints, timeRemaining }) {
+export async function logSummary(participantId, { totalCorrect, totalHints, timeRemaining, timeElapsed, totalPuzzles }) {
   // update root participant doc + log a separate summary entry
   const partRef = doc(db, 'participants', participantId)
   const summaryRef = collection(db, 'participants', participantId, 'summary')
 
-  await Promise.all([
-    updateDoc(partRef, { totalCorrect, totalHints, timeRemaining }),
-    addDoc(summaryRef, { totalCorrect, totalHints, timeRemaining, timestamp: ts() })
-  ])
-}
+    const summaryPayload = {
+    totalCorrect,
+    totalHints,
+    timeRemaining,
+    timeElapsed,
+    totalPuzzles,
+    timestamp: ts(),
+  };
 
+    await Promise.all([
+    // root doc (create or merge)
+    setDoc(
+      partRef,
+      {
+        totalCorrect,
+        totalHints,
+        timeRemaining,
+        timeElapsed,
+        totalPuzzles,
+        lastSummaryAt: ts(),
+      },
+      { merge: true }
+    ),
+
+    // summary subcollection entry
+    addDoc(summaryRef, summaryPayload),
+  ]);
+}
 // ─────────────────────────────────────────────────────────────
 // 5️⃣ End experiment
 // ─────────────────────────────────────────────────────────────
 export async function endExperiment(participantId) {
   const ref = doc(db, 'participants', participantId)
-  await updateDoc(ref, { endTime: ts() })
+  await setDoc(ref, { endTime: ts() }, {merge: true});
+}
+
+// Generic questionnaire logger
+// stores all questionnaries under participants/{id}/questionnaires
+
+export async function logQuestionnaire(participantId, type, payload) {
+  const ref = collection(db, 'participants', participantId, 'questionnaires')
+
+  await addDoc(ref, {
+    type,
+    ...payload,
+    timestamp: ts()
+  })
+}
+
+// NASA-TLX specific helper (thin wrapper)
+
+
+export async function logNasaTlx(participantId, scores) {
+  return logQuestionnaire(participantId, 'nasa_tlx', scores)
+}
+
+// NMSPI Helper
+
+export async function logNms (participantId, responses) {
+  return logQuestionnaire(participantId, "nmspi", responses);
+}
+
+//god speed helper
+
+export async function logGodspeed(participantId, answers) {
+return logQuestionnaire (participantId, "godspeed", answers )
+}
+
+// sus helper
+
+export async function logSus(participantId, input) {
+  return logQuestionnaire (participantId, "sus", input)
 }

@@ -61,32 +61,24 @@ export default function ConsentForm() {
         <h3 style={{ color: "#000" }}>1. Purpose of the Study</h3>
         <p style={{ color: "#000" }}>
           You are invited to take part in a research study exploring how people
-          interact with AI companions during problem-solving tasks. The study
-          examines whether interacting with an AI presented as a 3D avatar,
-          compared to text-only, influences engagement, cooperation, and
-          perceived social presence.
+          interact with an AI teammate during problem-solving tasks. The study
+          investigates how aspects of this interaction relate to engagement,
+          cooperation, and the feeling of working with a social partner.
         </p>
 
         <h3 style={{ color: "#000" }}>2. What Participation Involves</h3>
         <ul style={{ color: "#000" }}>
           <li>
             You will complete a short (approximately 8-minute) browser-based
-            cooperative puzzle task with an AI companion.
+            cooperative puzzle task with an AI teammate.
           </li>
           <li>
             The entire session lasts around 15–20 minutes, including a short
             questionnaire afterward.
           </li>
           <li>
-            You will be randomly assigned to one of two versions of the AI
-            interface:
-            <ul>
-              <li>Text-only AI</li>
-              <li>Text + 3D avatar AI</li>
-            </ul>
-          </li>
-          <li>
-            The AI will communicate with you, provide hints, and collaborate to
+            The AI teammate will appear through an on-screen interface and will
+            communicate with you, provide hints, and collaborate with you to
             solve puzzles.
           </li>
           <li>
@@ -204,6 +196,12 @@ export default function ConsentForm() {
             <strong>
               I have had the opportunity to consider the information provided
               and to ask questions, which have been answered to my satisfaction.
+            </strong>
+          </li>
+          <li>
+            <strong>
+              I understand that I will be interacting with an AI teammate to
+              complete a short reasoning task in my web browser.
             </strong>
           </li>
           <li>

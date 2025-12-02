@@ -1,6 +1,7 @@
 // src/components/ChatInterface.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ensureAnonAuth } from "../lib/firebase";
 
 import puzzlesData from "../data/puzzles.json";
 import TimerBar from "./TimerBar";
@@ -57,6 +58,7 @@ const [startCooldown, setStartCooldown] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   
+  
 
 function getRelevantHistory() {
   // send only recent ~15 messages, never empty
@@ -80,6 +82,8 @@ function getRelevantHistory() {
   const finishedRef = useRef(false);
   const startTsRef = useRef(Date.now());
   const puzzleStartRef = useRef(Date.now());
+const pendingFinishRef = useRef(null);
+
   const [phase, setPhase] = useState("intro"); // 'intro' | 'active' | 'finished'
 
   const totalHintsRef = useRef(0);
@@ -91,10 +95,45 @@ function getRelevantHistory() {
 
   const puzzle = useMemo(() => puzzlesData[currentIndex], [currentIndex]);
 
+
+  useEffect(() => {
+  async function initUser() {
+    const user = await ensureAnonAuth();  // 🔥 ensures login (anonymous)
+    console.log("👤 Logged in with UID:", user.uid);
+
+    const assignedCondition = sessionStorage.getItem("assignedCondition") || "chat";
+
+    await ensureParticipantDoc({
+      uid: user.uid,
+      condition: assignedCondition,
+      consent: true,
+    });
+
+    console.log("📄 Participant doc ensured");
+  }
+
+  initUser();
+}, []);
+
   useEffect(() => {
   console.log("🧩 FRONTEND — Current puzzle index:", currentIndex);
   console.log("🧩 FRONTEND — Current puzzle question:", puzzle?.question);
 }, [currentIndex, puzzle]);
+
+
+useEffect(() => {
+  // Only do something when:
+  // - audio is NOT playing
+  // - we have a pending finish
+  // - the experiment isn't already marked finished
+  if (!audioPlaying && pendingFinishRef.current && !finishedRef.current) {
+    const { finalCorrectCount, explicitTime } = pendingFinishRef.current;
+    pendingFinishRef.current = null;
+
+    // Call finish with the captured values
+    finish(finalCorrectCount, explicitTime);
+  }
+}, [audioPlaying, finish]);
 
 
 // Auto-play riddle audio for puzzles 2 and 3 (riddle2/riddle3)
@@ -180,7 +219,7 @@ useEffect(() => {
       setIsTyping(true);
      
 setStartDisabled(true);
-setStartCooldown(17);  // 17-second cooldown
+setStartCooldown(18);  // 17-second cooldown
 
       try {
         const response = await fetch(`${BACKEND}/chat`, {
@@ -212,6 +251,24 @@ setStartCooldown(17);  // 17-second cooldown
         pushAssistantMessages(assistantMessages);
 
         setHasIntroPlayed(true);
+
+        try {
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    await Promise.all(
+      assistantMessages.map((msg) =>
+        logMessage(uid, {
+          role: "assistant",
+          text: msg.text || "",
+          type: "intro",
+        })
+      )
+    );
+  }
+} catch (err) {
+  console.error("🔥 log intro messages error:", err);
+}
+
         
         
       
@@ -316,6 +373,24 @@ useEffect(() => {
       setMessages((m) => [...m, ...assistantMessages]);
       pushAssistantMessages(assistantMessages);
       setHalfTimeFired(true);
+
+      try {
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    await Promise.all(
+      assistantMessages.map((msg) =>
+        logMessage(uid, {
+          role: "assistant",
+          text: msg.text || "",
+          type: "time_event_half" // or "time_event_last_minute"
+        })
+      )
+    );
+  }
+} catch (err) {
+  console.error("🔥 log time event error:", err);
+}
+
       
     } catch (err) {
       console.error("Error playing half-time message:", err);
@@ -350,6 +425,24 @@ if (!oneMinuteFired && timeLeft <= 60) {
     setMessages((m) => [...m, ...assistantMessages]);
     pushAssistantMessages(assistantMessages);
     setOneMinuteFired(true);
+
+    try {
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    await Promise.all(
+      assistantMessages.map((msg) =>
+        logMessage(uid, {
+          role: "assistant",
+          text: msg.text || "",
+          type: "time_event_half" // or "time_event_last_minute"
+        })
+      )
+    );
+  }
+} catch (err) {
+  console.error("🔥 log time event error:", err);
+}
+
 
     } catch (err) {
       console.error("Error playing one-minute left message:", err);
@@ -482,7 +575,27 @@ if (!oneMinuteFired && timeLeft <= 60) {
 ]);
     pushAssistantMessages(assistantMessages);
 
-    setIsTyping(false);
+
+
+    
+try {
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    await Promise.all(
+      assistantMessages.map((msg) =>
+        logMessage(uid, {
+          role: "assistant",
+          text: msg.text || "",
+          type: "gpt_reply",
+        })
+      )
+    );
+  }
+} catch (err) {
+  console.error("🔥 log assistant messages error:", err);
+}
+
+setIsTyping(false);
 
     // extract hints
     if (phase === "active") {
@@ -580,6 +693,24 @@ if (!oneMinuteFired && timeLeft <= 60) {
   ...assistantMessages.map((msg) => ({ ...msg, ts: Date.now() })),
 ]);
       pushAssistantMessages(assistantMessages);
+
+      try {
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    await Promise.all(
+      assistantMessages.map((msg) =>
+        logMessage(uid, {
+          role: "assistant",
+          text: msg.text || "",
+          type: "feedback",
+        })
+      )
+    );
+  }
+} catch (err) {
+  console.error("🔥 log feedback messages error:", err);
+}
+
     } catch (err) {
       console.error("❌ feedback error:", err);
 
@@ -604,9 +735,15 @@ if (!oneMinuteFired && timeLeft <= 60) {
       puzzleStartRef.current = Date.now();
       setCurrentAnswer("");
     } else {
-      setCorrectCount(nextCorrectCount);
-      finish(nextCorrectCount);
-    }
+  setCorrectCount(nextCorrectCount);
+
+  // 🔹 Defer finish until current audio (feedback line) has completed
+  pendingFinishRef.current = {
+    finalCorrectCount: nextCorrectCount,
+    explicitTime: timeLeft,   // capture time remaining NOW
+  };
+}
+
 
    // markInteractionAndRestartInactivity();
   }
@@ -648,88 +785,133 @@ if (!oneMinuteFired && timeLeft <= 60) {
   // ─────────────────────────────────────────────
 async function finish(
   finalCorrectCount = correctCount,
-  explicitTime = timeLeft,
+  explicitTimeParam
 ) {
-if (finishedRef.current) return;
-finishedRef.current = true;
-//clearInactivity();
+  if (finishedRef.current) return;
+  finishedRef.current = true;
 
-const totalHints = totalHintsRef.current;
-const remaining = Math.max(0, explicitTime);
+  // 🔒 Make sure we always have a sane time value
+  let safeTimeLeft;
+  if (typeof explicitTimeParam === "number" && Number.isFinite(explicitTimeParam)) {
+    safeTimeLeft = explicitTimeParam;
+  } else if (typeof timeLeft === "number" && Number.isFinite(timeLeft)) {
+    safeTimeLeft = timeLeft;
+  } else {
+    safeTimeLeft = 0;
+  }
 
-// Save summary to firestore
-try {
-  await logSummary(auth.currentUser?.uid, {
+  const totalHintsRaw = totalHintsRef.current;
+  const totalHints = (typeof totalHintsRaw === "number" && Number.isFinite(totalHintsRaw))
+    ? totalHintsRaw
+    : 0;
+
+  const remaining = Math.max(0, safeTimeLeft);
+  const timeElapsed = TOTAL_TIME - remaining;
+  const totalPuzzles = puzzlesData.length;
+
+  console.log("🧮 FINISH SUMMARY DEBUG", {
+    finalCorrectCount,
+    explicitTimeParam,
+    safeTimeLeft,
+    timeLeftState: timeLeft,
+    remaining,
+    totalHints,
+    totalPuzzles,
+  });
+
+  // Save summary to firestore
+  try {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      console.warn("⚠️ No auth UID at finish, skipping Firestore log");
+    } else {
+      await logSummary(uid, {
+        totalCorrect: finalCorrectCount,
+        totalHints,
+        timeRemaining: remaining,
+        timeElapsed,
+        totalPuzzles,
+      });
+
+      await endExperiment(uid);
+    }
+  } catch (err) {
+    console.error(" Falied to log summary/end experiment", err);
+  }
+
+  // move UI to finished state
+  setPhase("finished");
+
+  const summary = {
     totalCorrect: finalCorrectCount,
     totalHints,
     timeRemaining: remaining,
-  });
+  };
+  setResultsSummary(summary);
+  setRedirectSeconds(10);
 
-  await endExperiment(auth.currentUser?.uid);
+  // Request closing message from backend
+  let closingText = "";
+  let closingAudio = null;
+  let closingLipSync = null;
 
-} catch {}
-
-// move ui to the finished state
-
-setPhase("finished");
-
-// store summary for the results card
-
-const summary = {
-  totalCorrect: finalCorrectCount,
-  totalHints,
-  timeRemaining: remaining,
-};
-setResultsSummary(summary);
-setRedirectSeconds(10);
-
-//Request closing message from backend
-
-let closingText = "";
-let closingAudio = null;
-let closingLipSync = null;
-
-try {
-  const res = await fetch (`${BACKEND}/closing-message`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
+  try {
+    console.log("📤 CLOSING MESSAGE PAYLOAD:", {
       correct: finalCorrectCount,
       totalHints,
       timeRemaining: remaining,
       totalPuzzles: puzzlesData.length,
-    }),
-  });
+    });
 
-  const data = await res.json();
-  closingText = data.text;
-  closingAudio = data.audio;
-  closingLipSync = data.lipsync;
+    const res = await fetch(`${BACKEND}/closing-message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        correct: finalCorrectCount,
+        totalHints,
+        timeRemaining: remaining,
+        totalPuzzles: puzzlesData.length,
+      }),
+    });
 
-} catch (err) {
-  console.error("Closing message failed", err);
-  closingText = 
-  "Great work today. It was a pleasure working with you - take care.";
-  closingAudio = null;
-  closingLipSync = null;
+    const data = await res.json();
+    closingText = data.text;
+    closingAudio = data.audio;
+    closingLipSync = data.lipsync;
+  } catch (err) {
+    console.error("Closing message failed", err);
+    closingText = "Great work today. It was a pleasure working with you - take care.";
+    closingAudio = null;
+    closingLipSync = null;
+  }
+
+  const closingMsg = {
+    role: "assistant",
+    text: closingText,
+    facialExpression: "smile",
+    animation: "Talking2",
+    audio: closingAudio,
+    lipsync: closingLipSync,
+    ts: Date.now(),
+  };
+
+  setMessages((m) => [...m, closingMsg]);
+  pushAssistantMessages([closingMsg]);
+
+  try {
+    const uid = auth.currentUser?.uid;
+    if (uid) {
+      await logMessage(uid, {
+        role: "assistant",
+        text: closingMsg.text || "",
+        type: "closing",
+      });
+    }
+  } catch (err) {
+    console.error("🔥 log closing message error:", err);
+  }
 }
 
-// Build final assistant message object
-
-const closingMsg = {
-  role: "assistant",
-  text: closingText,
-  facialExpression: "smile",
-  animation: "Talking2",
-  audio: closingAudio,
-  lipsync: closingLipSync,
-  ts: Date.now(),
-};
-
-setMessages((m) => [...m, closingMsg]);
-pushAssistantMessages([closingMsg]);
-
-}
 
 
 
@@ -845,7 +1027,9 @@ useEffect(() => {
 
         { phase !== "finished" && (
         <AnswerInput
+        disabled={audioPlaying}
           onSend={(text) => {
+            if (audioPlaying) return; // safety double-check
             sendUser(text);
            // markInteractionAndRestartInactivity();
           }}

@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+// src/components/SystemUsabilityScale.jsx
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { auth } from "../lib/firebase";
+import { logSus } from "../lib/logUtils";
 
 const ITEMS = [
   { key: 1, text: "I think that I would like to use this system frequently." },
@@ -15,21 +19,89 @@ const ITEMS = [
 ];
 
 export default function SystemUsabilityScale({ onSubmit }) {
+  // 🔹 Default all answers to neutral (3)
   const [responses, setResponses] = useState(
-    ITEMS.reduce((acc, item) => ({ ...acc, [item.key]: 3 }), {}) // default midpoint (3)
+    ITEMS.reduce((acc, item) => ({ ...acc, [item.key]: 3 }), {})
   );
+  // 🔹 Track which sliders the participant has actually touched
+  const [touched, setTouched] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+
+  const nav = useNavigate();
 
   const handleChange = (key, val) => {
     setResponses((prev) => ({ ...prev, [key]: Number(val) }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
   };
 
-  const nav = useNavigate();
-  const handleSubmit = () => {
-    nav("/debrief"),
-    onSubmit(responses);
-  };
+  // Technically always true with the default map, but keep it for safety
+  const allAnswered = useMemo(
+    () =>
+      ITEMS.every(
+        (item) =>
+          typeof responses[item.key] === "number" &&
+          responses[item.key] >= 1 &&
+          responses[item.key] <= 5
+      ),
+    [responses]
+  );
 
-  
+  const anyTouched = useMemo(
+    () => ITEMS.some((item) => touched[item.key]),
+    [touched]
+  );
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    // Safety net (should never fire, but good to keep)
+    if (!allAnswered) {
+      alert("Please answer all items before submitting.");
+      return;
+    }
+
+    // If they never touched any slider, special confirmation
+    if (!anyTouched) {
+      const okNeutral = window.confirm(
+        "You left all items at the neutral value (3). " +
+          "If this accurately reflects your experience, press OK to submit. " +
+          "Otherwise, press Cancel to adjust your responses."
+      );
+      if (!okNeutral) return;
+    } else {
+      const ok = window.confirm(
+        "Are you sure you want to submit your SUS responses?"
+      );
+      if (!ok) return;
+    }
+
+    setSubmitting(true);
+
+    // 1) Bubble up to parent if needed
+    if (typeof onSubmit === "function") {
+      try {
+        onSubmit(responses);
+      } catch (err) {
+        console.error("onSubmit handler threw:", err);
+      }
+    }
+
+    // 2) Log to Firestore
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        console.warn("SUS submit: no authenticated user found.");
+      } else {
+        await logSus(uid, responses);
+      }
+
+      // 3) Move to debrief
+      nav("/debrief");
+    } catch (err) {
+      console.error("🔥 Failed to log SUS responses:", err);
+      setSubmitting(false); // allow retry
+    }
+  };
 
   return (
     <div
@@ -49,76 +121,81 @@ export default function SystemUsabilityScale({ onSubmit }) {
       </h2>
 
       <p style={{ textAlign: "center", marginBottom: "2rem", opacity: 0.8 }}>
-        Please indicate how strongly you agree or disagree with each statement.  
+        Please indicate how strongly you agree or disagree with each statement.
         <br />
-        Scale: <strong>1 = Strongly Disagree</strong> → <strong>5 = Strongly Agree</strong>
+        Scale: <strong>1 = Strongly Disagree</strong> →{" "}
+        <strong>5 = Strongly Agree</strong>
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-        {ITEMS.map((item) => (
-          <div
-            key={item.key}
-            style={{
-              padding: "1rem",
-              borderRadius: "10px",
-              background: "#f9f9f9",
-              border: "1px solid #e0e0e0",
-            }}
-          >
-            <p style={{ marginBottom: "0.8rem", fontWeight: 600 }}>
-              {item.key}. {item.text}
-            </p>
-
+        {ITEMS.map((item) => {
+          const value = responses[item.key]; // always 1–5, default 3
+          return (
             <div
+              key={item.key}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                width: "100%",
-                marginTop: "0.6rem",
+                padding: "1rem",
+                borderRadius: "10px",
+                background: "#f9f9f9",
+                border: "1px solid #e0e0e0",
               }}
             >
-              <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
-                Strongly Disagree
-              </span>
+              <p style={{ marginBottom: "0.8rem", fontWeight: 600 }}>
+                {item.key}. {item.text}
+              </p>
 
-              <input
-                type="range"
-                min="1"
-                max="5"
-                value={responses[item.key]}
-                onChange={(e) => handleChange(item.key, e.target.value)}
-                style={{ width: "65%" }}
-              />
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "100%",
+                  marginTop: "0.6rem",
+                }}
+              >
+                <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                  Strongly Disagree
+                </span>
 
-              <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
-                Strongly Agree
-              </span>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={value}
+                  onChange={(e) => handleChange(item.key, e.target.value)}
+                  style={{ width: "65%" }}
+                />
+
+                <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                  Strongly Agree
+                </span>
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: "0.4rem" }}>
+                <strong>{value}</strong>
+              </div>
             </div>
-
-            <div style={{ textAlign: "center", marginTop: "0.4rem" }}>
-              <strong>{responses[item.key]}</strong>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button
         onClick={handleSubmit}
+        disabled={submitting}
         style={{
           marginTop: "2.5rem",
           width: "100%",
           padding: "1rem",
-          background: "#0066ff",
+          background: submitting ? "#999" : "#0066ff",
           color: "#fff",
           fontWeight: "600",
           borderRadius: "8px",
           border: "none",
-          cursor: "pointer",
+          cursor: submitting ? "not-allowed" : "pointer",
           fontSize: "1rem",
         }}
       >
-        Submit SUS Responses
+        {submitting ? "Submitting..." : "Submit SUS Responses"}
       </button>
     </div>
   );

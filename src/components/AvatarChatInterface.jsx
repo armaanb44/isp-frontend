@@ -31,7 +31,7 @@ export default function AvatarChatInterface() {
         justifyContent: "center",
       }}
     >
-        < Leva hidden/>
+        < Leva hidden />
         < Loader />
         <Canvas shadows camera={{ position: [0, 0, 1], fov: 30, near: 1, far: 10000}}>
       <Experience />

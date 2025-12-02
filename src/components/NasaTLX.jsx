@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
+import { auth } from "../lib/firebase";
+import { logNasaTlx } from "../lib/logUtils";
 
 const DIMENSIONS = [
   {
@@ -46,15 +47,58 @@ export default function NasaTLX({ onSubmit }) {
     frustration: 10,
   });
 
+  const [submitting, setSubmitting] = useState(false);
   const nav = useNavigate();
 
   const handleChange = (key, value) => {
-    setScores((s) => ({ ...s, [key]: parseInt(value) }));
+    setScores((s) => ({ ...s, [key]: parseInt(value, 10) }));
   };
 
-  const handleSubmit = () => {
-    onSubmit(scores);
-    nav("/nms");
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    // Optional: confirm submission
+    const ok = window.confirm(
+      "Are you sure you want to submit your workload ratings?"
+    );
+    if (!ok) return;
+
+    const allDefault = Object.values(scores).every((v) => v === 10);
+if (allDefault) {
+  const proceed = window.confirm(
+    "All sliders are still at the default value (10). Are you sure you want to submit?"
+  );
+  if (!proceed) return;
+}
+
+
+    setSubmitting(true);
+
+    // 1) Let parent collect scores in local state if it wants
+    if (typeof onSubmit === "function") {
+      try {
+        onSubmit(scores);
+      } catch (err) {
+        console.error("onSubmit handler threw:", err);
+      }
+    }
+
+    // 2) Log to Firestore under this participant
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        console.warn("NASA-TLX submit: no authenticated user found");
+      } else {
+        await logNasaTlx(uid, scores);
+      }
+
+      // 3) Move to the next questionnaire (Networked Minds / NMS)
+      nav("/nms");
+    } catch (err) {
+      console.error("🔥 Failed to log NASA-TLX to Firestore:", err);
+      // allow retry
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -75,7 +119,7 @@ export default function NasaTLX({ onSubmit }) {
       </h2>
 
       <p style={{ textAlign: "center", marginBottom: "2rem", opacity: 0.8 }}>
-        Please rate your experience for each scale by selecting a value between  
+        Please rate your experience for each scale by selecting a value between{" "}
         <strong>0 (Very Low)</strong> and <strong>20 (Very High)</strong>.
       </p>
 
@@ -85,7 +129,13 @@ export default function NasaTLX({ onSubmit }) {
             <label style={{ fontWeight: 600 }}>
               {d.label}
             </label>
-            <p style={{ fontSize: "0.9rem", opacity: 0.75, margin: "0.3rem 0 1rem" }}>
+            <p
+              style={{
+                fontSize: "0.9rem",
+                opacity: 0.75,
+                margin: "0.3rem 0 1rem",
+              }}
+            >
               {d.description}
             </p>
 
@@ -117,20 +167,22 @@ export default function NasaTLX({ onSubmit }) {
 
       <button
         onClick={handleSubmit}
+        disabled={submitting}
         style={{
           marginTop: "2.5rem",
           width: "100%",
           padding: "1rem",
-          background: "#0066ff",
+          background: submitting ? "#999" : "#0066ff",
           color: "#fff",
           fontWeight: "600",
           borderRadius: "8px",
           border: "none",
-          cursor: "pointer",
+          cursor: submitting ? "not-allowed" : "pointer",
           fontSize: "1rem",
+          transition: "background 0.2s ease",
         }}
       >
-        Submit Responses
+        {submitting ? "Submitting..." : "Submit Responses"}
       </button>
     </div>
   );
