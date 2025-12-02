@@ -848,7 +848,7 @@ async function finish(
     timeRemaining: remaining,
   };
   setResultsSummary(summary);
-  setRedirectSeconds(10);
+  setRedirectSeconds(15);
 
   // Request closing message from backend
   let closingText = "";
