@@ -32,6 +32,16 @@ console.log("🔍 Full chat URL =", `${BACKEND}/chat`);
 export default function ChatInterface() {
   const nav = useNavigate();
   const { pushAssistantMessages, audioPlaying } = useChat();
+  
+    // 🔹 NEW: track experimental condition locally
+  const [condition, setCondition] = useState(
+    () => sessionStorage.getItem("assignedCondition") || "chat"
+  );
+  const isAvatarCondition = condition === "avatar"; // adjust if your label is different
+
+    // 🔹 read condition from sessionStorage (whatever you set earlier in your assignment logic)
+  const assignedCondition =
+    sessionStorage.getItem("assignedCondition") || "chat";
 
   const [messages, setMessages] = useState([]);
 
@@ -98,10 +108,14 @@ const pendingFinishRef = useRef(null);
 
   useEffect(() => {
   async function initUser() {
-    const user = await ensureAnonAuth();  // 🔥 ensures login (anonymous)
+    const user = await ensureAnonAuth();
     console.log("👤 Logged in with UID:", user.uid);
 
-    const assignedCondition = sessionStorage.getItem("assignedCondition") || "chat";
+    const assignedCondition =
+      sessionStorage.getItem("assignedCondition") || "chat";
+
+    // 🔹 keep local state in sync so UI knows which mode we're in
+    setCondition(assignedCondition);
 
     await ensureParticipantDoc({
       uid: user.uid,
@@ -114,6 +128,7 @@ const pendingFinishRef = useRef(null);
 
   initUser();
 }, []);
+
 
   useEffect(() => {
   console.log("🧩 FRONTEND — Current puzzle index:", currentIndex);
@@ -233,6 +248,7 @@ setStartCooldown(18);  // 17-second cooldown
             currentPuzzleQuestion: puzzlesData[0]?.question || "",
             readinessScore: null,
             history: [],
+             condition: assignedCondition,   // 🔹 NEW
           }),
         });
         const data = await response.json();
@@ -360,6 +376,7 @@ useEffect(() => {
               currentPuzzleQuestion: puzzle.question,
               puzzleAnswer: puzzle.answer,
               history: [],
+               condition: assignedCondition,   // 🔹 NEW
             
             }),
         
@@ -414,6 +431,7 @@ if (!oneMinuteFired && timeLeft <= 60) {
           currentPuzzleQuestion: puzzle.question,
           puzzleAnswer: puzzle.answer,
           history: [],
+           condition: assignedCondition,   // 🔹 NEW
         }),
       });
 
@@ -561,6 +579,7 @@ if (!oneMinuteFired && timeLeft <= 60) {
         puzzleAnswer: puzzle.answer,
         readinessScore: null,
         history:getRelevantHistory(),
+         condition: assignedCondition,   // 🔹 NEW
       }),
     });
 
@@ -680,6 +699,7 @@ setIsTyping(false);
           totalPuzzles: puzzlesData.length,
           currentPuzzleQuestion: puzzle.question,
          history:getRelevantHistory(),
+          condition: assignedCondition,   // 🔹 NEW
         }),
       });
 
@@ -871,6 +891,7 @@ async function finish(
         totalHints,
         timeRemaining: remaining,
         totalPuzzles: puzzlesData.length,
+         condition: assignedCondition,   // 🔹 NEW
       }),
     });
 
@@ -1025,16 +1046,18 @@ useEffect(() => {
         </div>
 
 
-        { phase !== "finished" && (
-        <AnswerInput
-        disabled={audioPlaying}
-          onSend={(text) => {
-            if (audioPlaying) return; // safety double-check
-            sendUser(text);
-           // markInteractionAndRestartInactivity();
-          }}
-        />
-        )}
+       {phase !== "finished" && (
+  <AnswerInput
+    // 🔹 Only lock input when we actually have avatar audio
+    disabled={isAvatarCondition && audioPlaying}
+    onSend={(text) => {
+      if (isAvatarCondition && audioPlaying) return; // only block in avatar mode
+      sendUser(text);
+      // markInteractionAndRestartInactivity();
+    }}
+  />
+)}
+
 
         {phase === "intro" && (
           <div className="startArea">
@@ -1062,7 +1085,8 @@ useEffect(() => {
                       totalPuzzles: puzzlesData.length,
                       currentPuzzleQuestion: puzzle.question,
                       puzzleAnswer: puzzle.answer,
-                      history: []
+                      history: [],
+                       condition: assignedCondition,   // 🔹 NEW
                     }),
                   });
 
