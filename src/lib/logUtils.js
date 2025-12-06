@@ -1,4 +1,4 @@
-import { db, ts } from './firebase'
+import { db, ts, auth } from './firebase'
 import { doc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore'
 import { nanoid } from 'nanoid'
 import { log } from 'three'
@@ -6,18 +6,36 @@ import { log } from 'three'
 // ─────────────────────────────────────────────────────────────
 // 1️⃣ Create or ensure participant root document
 // ─────────────────────────────────────────────────────────────
-export async function ensureParticipantDoc({ uid, condition, consent }) {
-  const id = uid || nanoid()
-  const ref = doc(db, 'participants', id)
+export async function ensureParticipantDoc({ uid, condition = null, consent = null } = {}) {
+  const id = uid || nanoid();
+  const ref = doc(db, "participants", id);
 
-  await setDoc(ref, {
-    condition,
-    consent,
+  const payload = {
     startTime: ts(),
     endTime: null,
-  }, { merge: true })
+    ...(consent !== null ? { consent } : {}),
+    ...(condition !== null ? { condition } : {}),
+  };
 
-  return { id, ref }
+  await setDoc(ref, payload, { merge: true });
+
+  return { id, ref };
+}
+
+
+// Consent-time helper
+export async function createParticipantOnConsent() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error("Anonymous auth not ready.");
+
+  return ensureParticipantDoc({ uid, consent: true, condition: null });
+}
+// ─────────────────────────────────────────────────────────────
+// ✅ Set condition later (deception-safe)
+// ─────────────────────────────────────────────────────────────
+export async function setCondition(participantId, condition) {
+  const ref = doc(db, "participants", participantId);
+  await setDoc(ref, { condition }, { merge: true });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -128,4 +146,9 @@ return logQuestionnaire (participantId, "godspeed", answers )
 
 export async function logSus(participantId, input) {
   return logQuestionnaire (participantId, "sus", input)
+}
+
+// pre task questionnaire helper
+export async function logPreTask(participantId, input) {
+  return logQuestionnaire(participantId, "pre_task", input);
 }

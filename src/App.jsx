@@ -19,6 +19,20 @@ import Withdrawn from "./components/withdrawn";
 import Debrief from "./components/debriefForm";
 import Layout from "./components/layout";
 import InformationSheet from "./components/informationSheet";
+import PreTaskQuestionnaire from "./components/preTaskQuestionnaire";
+import { logPreTask } from "./lib/logUtils";
+import { ensureAnonAuth } from "./lib/firebase";
+
+async function handlePreTaskSubmit(payload) {
+  const user = await ensureAnonAuth();
+
+  // Prefer the exact participantId you stored at consent time,
+  // but fall back to auth uid if needed.
+  const participantId =
+    localStorage.getItem("participantId") || user.uid;
+
+  await logPreTask(participantId, payload);
+}
 
 async function handleTLXSubmit(scores) {
   console.log("TLX results:", scores);
@@ -36,7 +50,8 @@ export default function App() {
     path: "/",
     element: <Layout />,   // WRAPS ALL ROUTES
     children: [
-      { index: true, element: <ConsentForm /> },
+      { index: true, element: <InformationSheet /> },
+      { path: "preTaskQuestionnaire", element: <PreTaskQuestionnaire onSubmit={handlePreTaskSubmit} /> },
       { path: "start", element: <ConditionRouter /> },
       { path: "chat", element: <ChatInterface /> },
       { path: "avatar-chat", element: <AvatarChatInterface /> },
@@ -47,7 +62,7 @@ export default function App() {
       { path: "susscale", element: <SystemUsabilityScale /> },
       { path: "debrief", element: <Debrief /> },
         //Information sheet
-       { path: "information", element: <InformationSheet /> },
+       { path: "consentForm", element: <ConsentForm /> },
 
       // DEMO routes
       { path: "demo", element: <DemoLanding /> },

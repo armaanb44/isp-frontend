@@ -1,6 +1,9 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function InformationSheet() {
+  const navigate = useNavigate();
+
   const handleDownloadPdf = () => {
     // Assumes information-sheet.pdf is in your public/ folder
     const link = document.createElement("a");
@@ -9,6 +12,10 @@ export default function InformationSheet() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleGoToConsent = () => {
+    navigate("/consentForm");
   };
 
   return (
@@ -51,11 +58,14 @@ export default function InformationSheet() {
           <strong>Ethical clearance reference number:</strong> [to be added once
           provided]
           <br />
-          <strong>Information Sheet version:</strong> 1.0 – [DD/MM/2025]
+          <strong>Information Sheet version:</strong> 1.0 – [05/12/2025]
         </p>
 
         <p style={{ color: "#000", marginTop: "1rem" }}>
-          <em>You will be given a copy of this information sheet to keep.</em>
+          <em>
+            Click Download Information Sheet Below To Keep A Copy Of This
+            Document
+          </em>
         </p>
 
         <h3 style={{ color: "#000" }}>Invitation</h3>
@@ -72,12 +82,14 @@ export default function InformationSheet() {
         <h3 style={{ color: "#000" }}>What is the purpose of the project?</h3>
         <p style={{ color: "#000" }}>
           The project aims to understand how people experience working with an
-          AI “teammate” during a short reasoning task. In particular, it
-          investigates whether interacting with an AI presented as a 3D animated
-          avatar, compared to a text-only chat interface, changes how socially
-          “present” the AI feels, how engaged participants feel, and how they
-          perform on the puzzles. The results may help inform the design of
-          future AI-based learning and support tools.
+          AI “teammate” during a short reasoning task and how different forms of
+          AI interface support may influence engagement, cooperation, and the
+          feeling of working with a social partner. The results may help inform
+          the design of future AI-based learning and support tools.
+        </p>
+        <p style={{ color: "#000" }}>
+          To ensure unbiased responses, some details about the specific
+          interface focus will be explained fully during the debrief.
         </p>
 
         <h3 style={{ color: "#000" }}>Why have I been invited to take part?</h3>
@@ -89,9 +101,7 @@ export default function InformationSheet() {
           students and other adults recruited via online and university
           channels.
         </p>
-        <p style={{ color: "#000" }}>
-          To take part, you should:
-        </p>
+        <p style={{ color: "#000" }}>To take part, you should:</p>
         <ul style={{ color: "#000" }}>
           <li>Be 18 years of age or older</li>
           <li>Be fluent in English</li>
@@ -126,15 +136,8 @@ export default function InformationSheet() {
           </li>
           <li>
             Next, you will complete a short, timed puzzle task (around 8
-            minutes) together with an AI teammate. You will be randomly
-            allocated to one of two interface conditions:
-            <ul>
-              <li>a text-only chat interface, or</li>
-              <li>
-                a chat interface with a 3D animated avatar that speaks the AI’s
-                messages.
-              </li>
-            </ul>
+            minutes) together with an AI teammate via an on-screen interface
+            designed to support you during the task.
           </li>
           <li>
             You will see a small set of reasoning puzzles (for example, short
@@ -151,8 +154,8 @@ export default function InformationSheet() {
           </li>
           <li>
             At the end, you will see a debrief page explaining the purpose of
-            the study in more detail and giving you contact details if you have
-            further questions.
+            the study in more detail, including the specific interface focus,
+            and giving you contact details if you have further questions.
           </li>
         </ul>
         <p style={{ color: "#000" }}>
@@ -177,21 +180,23 @@ export default function InformationSheet() {
           psychological research and to support student projects.
         </p>
 
-        <h3 style={{ color: "#000" }}>What are the possible risks of taking part?</h3>
+        <h3 style={{ color: "#000" }}>
+          What are the possible risks of taking part?
+        </h3>
         <p style={{ color: "#000" }}>
           This project is considered minimal risk. The puzzles are designed to
-          be mildly challenging but not distressing. You are free to skip any
-          question you do not wish to answer and can stop the task at any time
-          before submitting your responses.
+          be mildly challenging but not distressing. 
         </p>
         <p style={{ color: "#000" }}>
           The main inconvenience may be a small amount of time and effort in
           concentrating on the puzzles. If at any point you feel uncomfortable
-          or no longer wish to continue, you can simply close the browser
-          window.
+          or no longer wish to continue, you can end the task at any time
+          by clicking the "End Experiment" button on the top right of your screen.
         </p>
 
-        <h3 style={{ color: "#000" }}>What are the possible benefits of taking part?</h3>
+        <h3 style={{ color: "#000" }}>
+          What are the possible benefits of taking part?
+        </h3>
         <p style={{ color: "#000" }}>
           There are no direct personal benefits to you from taking part.
           However, you may find the puzzles and interaction with the AI
@@ -240,8 +245,7 @@ export default function InformationSheet() {
           </li>
           <li>
             Electronic data will be stored in a secure, encrypted Firebase
-            database and backed up to King’s College London–approved storage
-            with appropriate access controls.
+            database.
           </li>
           <li>
             Only the student researcher and project supervisor will have access
@@ -284,21 +288,6 @@ export default function InformationSheet() {
           not contain any information that could reasonably identify you.
         </p>
 
-        <p style={{ color: "#000" }}>
-          Further information on how King’s processes research data can be found
-          at:
-          <br />
-          <a
-            href="https://www.kcl.ac.uk/research/support/research-ethics/kings-college-london-statement-on-use-of-personal-data-in-research"
-            target="_blank"
-            rel="noreferrer"
-          >
-            King’s College London – Statement on use of personal data in
-            research
-          </a>
-          .
-        </p>
-
         <h3 style={{ color: "#000" }}>
           What if I change my mind about taking part?
         </h3>
@@ -337,6 +326,7 @@ export default function InformationSheet() {
         <h3 style={{ color: "#000" }}>
           Who should I contact for further information?
         </h3>
+
         <p style={{ color: "#000" }}>
           If you have any questions or would like more information about this
           project, please contact:
@@ -383,22 +373,48 @@ export default function InformationSheet() {
           taking part in this research.
         </p>
 
-        {/* DOWNLOAD BUTTON */}
-        <button
-          onClick={handleDownloadPdf}
+        {/* ACTION BUTTONS (LEFT / RIGHT) */}
+        <div
           style={{
             marginTop: "1.5rem",
-            padding: "0.75rem 1.5rem",
-            fontSize: "1rem",
-            borderRadius: "8px",
-            backgroundColor: "#007bff",
-            color: "#fff",
-            border: "none",
-            cursor: "pointer",
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "1rem",
+            flexWrap: "wrap",
           }}
         >
-          Download Information Sheet (PDF)
-        </button>
+          {/* LEFT BUTTON -> NAVIGATE */}
+          <button
+            onClick={handleGoToConsent}
+            style={{
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem",
+              borderRadius: "8px",
+              backgroundColor: "#198754",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            I have read the information sheet
+          </button>
+
+          {/* RIGHT BUTTON -> DOWNLOAD */}
+          <button
+            onClick={handleDownloadPdf}
+            style={{
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem",
+              borderRadius: "8px",
+              backgroundColor: "#007bff",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Download Information Sheet (PDF)
+          </button>
+        </div>
       </div>
     </div>
   );
