@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 /**
  * Pre-task questionnaire for your ISP study.
  * - Minimal-risk, short, deception-safe (no mention of conditions).
- * - Now requires all fields to be answered.
+ * - Requires all displayed fields to be answered.
  * - "Prefer not to say" is treated as a valid response.
  */
 export default function PreTaskQuestionnaire({ onSubmit }) {
@@ -33,10 +33,6 @@ export default function PreTaskQuestionnaire({ onSubmit }) {
     // AI familiarity
     aiUseFrequency: "",
     aiComfort: "", // 1-7 | "prefer_not"
-
-    // Baseline state
-    alertness: "", // 1-7 | "prefer_not"
-    stress: "", // 1-7 | "prefer_not"
   });
 
   const [touched, setTouched] = useState({});
@@ -90,7 +86,7 @@ export default function PreTaskQuestionnaire({ onSubmit }) {
     else if (!Number.isFinite(ageNum)) e.age = "Please enter a valid age.";
     else if (ageNum < 18) e.age = "You must be 18 or older to participate.";
 
-    // ✅ Previously-optional fields are now required
+    // ✅ Previously optional fields are now required
     if (!form.gender) e.gender = "Please select an option.";
     if (!form.educationLevel) e.educationLevel = "Please select an option.";
     if (!form.studentStatus) e.studentStatus = "Please select an option.";
@@ -99,17 +95,12 @@ export default function PreTaskQuestionnaire({ onSubmit }) {
     if (!form.aiUseFrequency) e.aiUseFrequency = "Please select an option.";
     if (!form.aiComfort) e.aiComfort = "Please select an option.";
 
-    if (!form.alertness) e.alertness = "Please select an option.";
-    if (!form.stress) e.stress = "Please select an option.";
-
-    // Scale range validation (only if numeric)
-    for (const key of ["aiComfort", "alertness", "stress"]) {
-      const v = form[key];
-      if (v && v !== "prefer_not") {
-        const n = parseInt(v, 10);
-        if (!Number.isFinite(n) || n < 1 || n > 7) {
-          e[key] = "Please choose a value between 1 and 7.";
-        }
+    // AI comfort range validation (only if numeric)
+    const v = form.aiComfort;
+    if (v && v !== "prefer_not") {
+      const n = parseInt(v, 10);
+      if (!Number.isFinite(n) || n < 1 || n > 7) {
+        e.aiComfort = "Please choose a value between 1 and 7.";
       }
     }
 
@@ -138,9 +129,6 @@ export default function PreTaskQuestionnaire({ onSubmit }) {
 
       aiUseFrequency: true,
       aiComfort: true,
-
-      alertness: true,
-      stress: true,
     });
 
     if (hasErrors) {
@@ -152,8 +140,6 @@ export default function PreTaskQuestionnaire({ onSubmit }) {
       ...form,
       age: ageNum,
       aiComfort: parseScale(form.aiComfort),
-      alertness: parseScale(form.alertness),
-      stress: parseScale(form.stress),
       submittedAt: new Date().toISOString(),
       eligible:
         form.confirmAdult &&
@@ -592,8 +578,6 @@ export default function PreTaskQuestionnaire({ onSubmit }) {
             </div>
           </div>
         </div>
-
-        
 
         {/* Submit */}
         <div style={styles.submitBar}>
