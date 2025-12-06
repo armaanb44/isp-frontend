@@ -46,7 +46,7 @@ export default function ConsentForm() {
           <strong>Ethical review reference number:</strong> [to be added after
           approval]
           <br />
-          <strong>Information Sheet version:</strong> 1.0 – [DD/MM/2025]
+          <strong>Information Sheet version:</strong> 1.0 – [05/12/2025]
         </p>
 
         <h3 style={{ color: "#000" }}>Researcher</h3>
@@ -188,7 +188,7 @@ export default function ConsentForm() {
           <li>
             <strong>
               I confirm that I have read and understood the Participant
-              Information Sheet (version 1.0, dated [DD/MM/2025]) for the above
+              Information Sheet (version 1.0, dated [05/12/2025]) for the above
               project and that I meet the eligibility criteria.
             </strong>
           </li>
