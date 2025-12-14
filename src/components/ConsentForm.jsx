@@ -69,8 +69,7 @@ export default function ConsentForm() {
           Cooperative Problem Solving: A Study on Social Presence and Cognitive
           Engagement
           <br />
-          <strong>Ethical review reference number:</strong> [to be added after
-          approval]
+          <strong>Ethical review reference number:</strong> MRSU-25/26-53480  
           <br />
           <strong>Information Sheet version:</strong> 1.0 – [05/12/2025]
         </p>

@@ -55,8 +55,7 @@ export default function InformationSheet() {
           Cooperative Problem Solving: A Study on Social Presence and Cognitive
           Engagement
           <br />
-          <strong>Ethical clearance reference number:</strong> [to be added once
-          provided]
+          <strong>Ethical clearance reference number:</strong> MRSU-25/26-53480  
           <br />
           <strong>Information Sheet version:</strong> 1.0 – [05/12/2025]
         </p>
