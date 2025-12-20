@@ -105,6 +105,13 @@ const pendingFinishRef = useRef(null);
 
   const puzzle = useMemo(() => puzzlesData[currentIndex], [currentIndex]);
 
+  const correctCountRef = useRef(0);
+
+useEffect(() => {
+  correctCountRef.current = correctCount;
+}, [correctCount]);
+
+
 
   useEffect(() => {
   async function initUser() {
@@ -347,7 +354,7 @@ useEffect(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(id);
-          finish(correctCount, 0);
+          finish(correctCountRef.current, 0);
           return 0;
         }
         return t - 1;
