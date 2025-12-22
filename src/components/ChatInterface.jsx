@@ -149,6 +149,8 @@ useEffect(() => {
   // - audio is NOT playing
   // - we have a pending finish
   // - the experiment isn't already marked finished
+  if (!isAvatarCondition) return;
+
   if (!audioPlaying && pendingFinishRef.current && !finishedRef.current) {
     const { finalCorrectCount, explicitTime } = pendingFinishRef.current;
     pendingFinishRef.current = null;
@@ -156,7 +158,7 @@ useEffect(() => {
     // Call finish with the captured values
     finish(finalCorrectCount, explicitTime);
   }
-}, [audioPlaying, finish]);
+}, [isAvatarCondition, audioPlaying, finish]);
 
 
 // Auto-play riddle audio for puzzles 2 and 3 (riddle2/riddle3)
@@ -766,7 +768,7 @@ setIsTyping(false);
   setCorrectCount(nextCorrectCount);
 
   // 🔹 Defer finish until current audio (feedback line) has completed
-  if (isAvatarCondition0) {
+  if (isAvatarCondition) {
   pendingFinishRef.current = {
     finalCorrectCount: nextCorrectCount,
     explicitTime: timeLeft,   // capture time remaining NOW
