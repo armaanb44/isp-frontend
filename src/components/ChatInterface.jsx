@@ -17,6 +17,7 @@ import {
   logSummary,
   endExperiment,
 } from "../lib/logUtils";
+import { time } from "three/tsl";
 
 const TOTAL_TIME = 480;
 const INACTIVITY_MS = 40000;
@@ -765,11 +766,15 @@ setIsTyping(false);
   setCorrectCount(nextCorrectCount);
 
   // 🔹 Defer finish until current audio (feedback line) has completed
+  if (isAvatarCondition0) {
   pendingFinishRef.current = {
     finalCorrectCount: nextCorrectCount,
     explicitTime: timeLeft,   // capture time remaining NOW
   };
+} else {
+  finish(nextCorrectCount, timeLeft);
 }
+    }
 
 
    // markInteractionAndRestartInactivity();
